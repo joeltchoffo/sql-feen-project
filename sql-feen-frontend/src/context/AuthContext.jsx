@@ -3,13 +3,15 @@ import { createContext, useState, useEffect } from "react";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem("token"));
-  const [user, setUser] = useState(null);
+  const [authToken, setAuthToken] = useState(() =>
+    localStorage.getItem("token")
+  );
+  const [user, setUser] = useState(null); // optional für später
 
   const login = (token) => {
     setAuthToken(token);
     localStorage.setItem("token", token);
-    // Optional: decode JWT to get user info
+    // setUser(...) ← optional: aus Token ableiten
   };
 
   const logout = () => {
@@ -18,7 +20,17 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const contextData = { authToken, login, logout, user };
+  // optional: beim Laden prüfen, ob Token gültig ist
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setAuthToken(token);
+    }
+  }, []);
 
-  return <AuthContext.Provider value={contextData}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ authToken, login, logout, user }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
