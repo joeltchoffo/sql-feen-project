@@ -10,25 +10,22 @@ import ShopPage from "./pages/ShopPage";
 import ProgressPage from "./pages/ProgressPage";
 import NavBar from "./components/NavBar";
 
-
-
 export default function App() {
   return (
     <AuthProvider>
       <GameProvider>
         <Router>
-          <NavBar />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/play" element={<ModeSelectPage />} />
-            <Route path="/levels" element={<LevelSelectPage />} />
-            <Route path="/mission/:level/:mission" element={<MissionPage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/progress" element={<ProgressPage />} />
-
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+            <NavBar />
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/play" element={<ModeSelectPage />} />
+                <Route path="/levels" element={<LevelSelectPage />} />
+                <Route path="/mission/:level/:mission" element={<MissionPage />} />
+                <Route path="/shop" element={<ShopPage />} />
+                <Route path="/progress" element={<ProgressPage />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
         </Router>
       </GameProvider>
     </AuthProvider>
