@@ -1,82 +1,73 @@
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import { useGame } from "../context/GameContext";
+import MainLayout from "../components/MainLayout";
 
 export default function MissionPage() {
   const { level, mission } = useParams();
-  const [query, setQuery] = useState("");
+  const [sql, setSql] = useState("");
   const [result, setResult] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-  const { earnPoints, markMissionCompleted } = useGame();
-
-  const validateQuery = (sql) => {
-    const allowed = ["select", "from", "where", "join", "on", "substr", "reverse"];
-    const lowered = sql.toLowerCase();
-    return allowed.every(keyword => !lowered.includes(";")) && allowed.some(kw => lowered.includes(kw));
-  };
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateQuery(query)) {
-      setFeedback("🚫 Ungültige SQL-Abfrage!");
-      return;
-    }
-
     try {
-      // Später: API-Call ans Backend
-      const simulatedResult = [{ Fee: "Luna", Feenstaub: "Glitzer" }];
-      setResult(simulatedResult);
-      setFeedback("✨ Du hast die Fee befreit!");
-
-      earnPoints(10); // Punkte gutschreiben
-      markMissionCompleted(`L${level}M${mission}`);
+      // hier später fetch an Backend (temporär nur Demo)
+      if (sql.toLowerCase().includes("select")) {
+        setResult("🎉 Du hast die Fee befreit!");
+        setError(null);
+      } else {
+        throw new Error("Nur SELECT-Zauber sind hier erlaubt!");
+      }
     } catch (err) {
-      setFeedback("Fehler beim Ausführen der Abfrage");
+      setResult(null);
+      setError(err.message);
     }
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Level {level} – Mission {mission}</h1>
+    <MainLayout>
+      <div className="space-y-6 max-w-4xl mx-auto text-purple-100">
+        <h1 className="text-3xl font-bold text-purple-300">📘 Mission {level}.{mission}</h1>
+        <p>
+          Die Datenfee wurde in einem geheimen Datensatz gefangen.  
+          Nutze dein SQL-Wissen, um sie zu befreien!
+        </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <textarea
-          rows={5}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Gib deine SQL-Abfrage ein..."
-          className="w-full p-2 border rounded"
-        />
-        <button type="submit" className="bg-green-600 text-white p-2 rounded hover:bg-green-700">
-          🧪 Abfrage ausführen
-        </button>
-      </form>
-
-      {feedback && <p className="mt-4 text-lg">{feedback}</p>}
-
-      {result && (
-        <div className="mt-6 border rounded p-4">
-          <h2 className="font-semibold mb-2">🔍 Ergebnis:</h2>
-          <table className="table-auto w-full border-collapse">
-            <thead>
-              <tr>
-                {Object.keys(result[0]).map((key) => (
-                  <th key={key} className="border p-2 bg-gray-100">{key}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {result.map((row, i) => (
-                <tr key={i}>
-                  {Object.values(row).map((val, j) => (
-                    <td key={j} className="border p-2">{val}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-[#2a1b4d] border border-purple-700 p-4 rounded-lg shadow">
+          <h2 className="text-xl font-semibold text-purple-200 mb-2">🧪 Aufgabe:</h2>
+          <p>
+            Schreibe eine SQL-Abfrage, die alle Zauberer mit dem Rang "Meister" aus der Tabelle `magier` auswählt.
+          </p>
         </div>
-      )}
-    </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <textarea
+            rows={5}
+            value={sql}
+            onChange={(e) => setSql(e.target.value)}
+            placeholder="z.B. SELECT * FROM magier WHERE rang = 'Meister';"
+            className="w-full p-4 bg-[#1c1237] text-white border border-purple-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+          ></textarea>
+          <button
+            type="submit"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:from-indigo-500 hover:to-purple-500 transition"
+          >
+            ✨ Ausführen
+          </button>
+        </form>
+
+        {/* Feedback */}
+        {result && (
+          <div className="bg-green-800 border border-green-500 p-4 rounded mt-4 text-green-100">
+            ✅ {result}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-800 border border-red-500 p-4 rounded mt-4 text-red-100">
+            ⚠️ {error}
+          </div>
+        )}
+      </div>
+    </MainLayout>
   );
 }
