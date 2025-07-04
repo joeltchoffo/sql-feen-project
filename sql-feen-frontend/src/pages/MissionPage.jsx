@@ -1,82 +1,105 @@
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import { useGame } from "../context/GameContext";
+import { useAuth } from "../context/AuthContext";
+import MainLayout from "../components/MainLayout";
+import { useNavigate } from "react-router-dom";
+
 
 export default function MissionPage() {
   const { level, mission } = useParams();
-  const [query, setQuery] = useState("");
+  const { authToken } = useAuth();
+  const [sql, setSql] = useState("");
   const [result, setResult] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-  const { earnPoints, markMissionCompleted } = useGame();
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
-  const validateQuery = (sql) => {
-    const allowed = ["select", "from", "where", "join", "on", "substr", "reverse"];
-    const lowered = sql.toLowerCase();
-    return allowed.every(keyword => !lowered.includes(";")) && allowed.some(kw => lowered.includes(kw));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateQuery(query)) {
-      setFeedback("🚫 Ungültige SQL-Abfrage!");
-      return;
-    }
+  const handleSubmit = async () => {
+    setLoading(true);
+    setResult(null);
+    setFeedback("");
 
     try {
-      // Später: API-Call ans Backend
-      const simulatedResult = [{ Fee: "Luna", Feenstaub: "Glitzer" }];
-      setResult(simulatedResult);
-      setFeedback("✨ Du hast die Fee befreit!");
+      const response = await fetch(`http://localhost:8000/api/mission/${level}/${mission}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ sql }),
+      });
 
-      earnPoints(10); // Punkte gutschreiben
-      markMissionCompleted(`L${level}M${mission}`);
+      const data = await response.json();
+      if (response.ok) {
+        setResult(data.result); // erwartet Tabelle/Antwort
+        setFeedback("🎉 Du hast die Fee befreit!");
+      } else {
+        setFeedback(data.error || "❌ Leider falsch. Versuch es erneut.");
+      }
     } catch (err) {
-      setFeedback("Fehler beim Ausführen der Abfrage");
+      setFeedback("⚠️ Serverfehler. Bitte später erneut versuchen.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Level {level} – Mission {mission}</h1>
+    <MainLayout>
+      <div className="max-w-3xl mx-auto text-purple-100 space-y-6">
+        <h1 className="text-3xl font-bold text-center">🧝 Aufgabe {mission} in Level {level}</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <textarea
-          rows={5}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Gib deine SQL-Abfrage ein..."
-          className="w-full p-2 border rounded"
-        />
-        <button type="submit" className="bg-green-600 text-white p-2 rounded hover:bg-green-700">
-          🧪 Abfrage ausführen
-        </button>
-      </form>
+        <div className="bg-[#2a1a40] p-5 rounded-xl border border-purple-700 shadow">
+          <p className="mb-2 text-lg">🧙‍♂️ Die Fee flüstert:</p>
+          <p className="italic text-purple-300">
+            „Nutze SELECT, um alle Zaubertränke zu finden, die grün sind…“
+          </p>
+        </div>
 
-      {feedback && <p className="mt-4 text-lg">{feedback}</p>}
+        <div className="bg-[#1c1232] p-5 rounded-xl border border-purple-700 shadow">
+          <label className="block mb-2 font-semibold">💻 Dein SQL-Zauber:</label>
+          <textarea
+            value={sql}
+            onChange={(e) => setSql(e.target.value)}
+            className="w-full h-32 p-3 rounded bg-[#2a1f4d] text-white font-mono"
+            placeholder="SELECT * FROM ..."
+          ></textarea>
 
-      {result && (
-        <div className="mt-6 border rounded p-4">
-          <h2 className="font-semibold mb-2">🔍 Ergebnis:</h2>
-          <table className="table-auto w-full border-collapse">
-            <thead>
-              <tr>
-                {Object.keys(result[0]).map((key) => (
-                  <th key={key} className="border p-2 bg-gray-100">{key}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {result.map((row, i) => (
-                <tr key={i}>
-                  {Object.values(row).map((val, j) => (
-                    <td key={j} className="border p-2">{val}</td>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded"
+          >
+            {loading ? "⏳ Auswertung..." : "🪄 Zauber anwenden"}
+          </button>
+
+          {feedback && (
+            <p className="mt-4 font-semibold text-center text-yellow-300">{feedback}</p>
+          )}
+        </div>
+
+        {result && (
+          <div className="bg-[#2e204a] p-4 rounded border border-purple-700 shadow">
+            <h2 className="text-lg font-bold mb-2">📋 Ergebnis:</h2>
+            <table className="table-auto w-full text-left text-sm text-purple-100">
+              <thead>
+                <tr>
+                  {Object.keys(result[0] || {}).map((col) => (
+                    <th key={col} className="border-b pb-1">{col}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+              </thead>
+              <tbody>
+                {result.map((row, idx) => (
+                  <tr key={idx}>
+                    {Object.values(row).map((val, i) => (
+                      <td key={i} className="py-1">{val}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </MainLayout>
   );
 }
